@@ -1,7 +1,6 @@
 package markdown
 
 import (
-	"fmt"
 	"root/hash"
 	"root/sbuff"
 	"root/syntax"
@@ -18,8 +17,8 @@ func NewMarkdown() *Markdown {
 	hashMap := hash.NewHash(128)
 
 	hashMap.Append('*', syntax.NewCode(10794, 43, 46)) //done
-	hashMap.Append('`', syntax.NewCode(0, 7, 12))      //specific case (dynamic size)
-	hashMap.Append('[', syntax.NewCode(0, 0, 0))       //specific case (dynamic size)
+	hashMap.Append('`', syntax.NewCode(1, 7, 12))      //specific case (dynamic size)
+	hashMap.Append('[', syntax.NewCode(1, 0, 0))       //specific case (dynamic size)
 	hashMap.Append('_', syntax.NewCode(95, 16, 19))    //done
 	hashMap.Append('#', syntax.NewCode(8995, 7, 11))   //done
 	hashMap.Append('>', syntax.NewCode(15904, 26, 39)) //bug
@@ -42,6 +41,7 @@ func (m *Markdown) ToHTML(data []byte) []byte {
 		if code, ok := m.GetValue(data[i]); ok {
 			buffer.Append(data[literal:i])
 			//img & url
+
 			if data[i] == '[' {
 				var c uint8 //img => 1 or url => 0
 				var start int = i
@@ -54,7 +54,7 @@ func (m *Markdown) ToHTML(data []byte) []byte {
 					i++
 				}
 
-				m.SBuff.Append(data[start:i])
+				m.Syntax.Append(data[start:i])
 				start = i
 				// buffer.setHalf(buffer.pointer)
 				if data[i+1] != '(' {
@@ -64,11 +64,11 @@ func (m *Markdown) ToHTML(data []byte) []byte {
 
 				i += 2
 				for data[i] != ')' && i < len(data) {
-					m.SBuff.Append(data[start:i])
+					m.Syntax.Append(data[start:i])
 					i++
 				}
 
-				fmt.Println(string(m.SBuff.Read(0, 150)))
+				// fmt.Println(string(m.Syntax.Read(0, 150)))
 
 				buffer.Reset()
 			} else if i <= len(data)-2 && load16(data[i:i+2]) == uint16(code.Code) {
