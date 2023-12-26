@@ -1,37 +1,46 @@
 package markdown
 
 import (
+	"fmt"
 	"root/hash"
 	"root/sbuff"
+	"root/syntax"
 )
 
 type Markdown struct {
 	*hash.Hash
-	*Syntax
+	*syntax.Syntax
+	HTML []byte
+	find int
 }
 
 func NewMarkdown() *Markdown {
 	hashMap := hash.NewHash(128)
 
-	hashMap.Append('*', 10794)
-	hashMap.Append('`', 0) //specific case (dynamic size)
-	hashMap.Append('[', 0) //specific case (dynamic size)
-	hashMap.Append('_', 95)
-	hashMap.Append('#', 8995)
-	hashMap.Append('>', 15904)
-	hashMap.Append('~', 32382)
+	hashMap.Append('*', syntax.NewCode(10794, 43, 46)) //done
+	hashMap.Append('`', syntax.NewCode(0, 7, 12))      //specific case (dynamic size)
+	hashMap.Append('[', syntax.NewCode(0, 0, 0))       //specific case (dynamic size)
+	hashMap.Append('_', syntax.NewCode(95, 16, 19))    //done
+	hashMap.Append('#', syntax.NewCode(8995, 7, 11))   //done
+	hashMap.Append('>', syntax.NewCode(15904, 26, 39)) //bug
+	hashMap.Append('~', syntax.NewCode(32382, 50, 53)) //done
 
 	return &Markdown{
 		Hash:   hashMap,
-		Syntax: NewSyntax(),
+		Syntax: syntax.NewSyntax(),
+		HTML:   []byte("<p></p><h2></h2><i></i><code></code><q></q><b></b><s></s>"),
 	}
 }
 
 func (m *Markdown) ToHTML(data []byte) []byte {
 	buffer := sbuff.NewSBuff(len(data) + len(data)/2)
+	m.find = 0 //for testing
+	literal := 0
 
 	for i := 0; i < len(data); i++ {
+
 		if code, ok := m.GetValue(data[i]); ok {
+			buffer.Append(data[literal:i])
 			//img & url
 			if data[i] == '[' {
 				var c uint8 //img => 1 or url => 0
@@ -45,10 +54,9 @@ func (m *Markdown) ToHTML(data []byte) []byte {
 					i++
 				}
 
-				buffer.Append(data[start:i])
+				m.SBuff.Append(data[start:i])
 				start = i
 				// buffer.setHalf(buffer.pointer)
-
 				if data[i+1] != '(' {
 					buffer.Reset()
 					continue
@@ -56,20 +64,24 @@ func (m *Markdown) ToHTML(data []byte) []byte {
 
 				i += 2
 				for data[i] != ')' && i < len(data) {
-					buffer.Append(data[start:i])
+					m.SBuff.Append(data[start:i])
 					i++
 				}
 
+				fmt.Println(string(m.SBuff.Read(0, 150)))
+
 				buffer.Reset()
-				continue
+			} else if i <= len(data)-2 && load16(data[i:i+2]) == uint16(code.Code) {
+				buffer.Append(m.HTML[code.Start+code.IsOpen : code.End+code.IsOpen])
+				code.Update()
+				i += 2
 			}
 
-			//bold & heading & quote & strikeTrough
-			if i <= len(data)-2 && load16(data[i:i+2]) == uint16(code) {
-				continue
-			}
+			literal = i
 		}
 	}
+
+	buffer.Append(data[literal:])
 
 	return buffer.GetBuff()
 }

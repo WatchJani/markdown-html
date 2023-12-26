@@ -2,6 +2,7 @@ package main
 
 import (
 	"root/markdown"
+	"root/syntax"
 	"testing"
 )
 
@@ -13,7 +14,7 @@ func BenchmarkString(b *testing.B) {
 }
 
 func BenchmarkByte(b *testing.B) {
-	syn := markdown.NewSyntax()
+	syn := syntax.NewSyntax()
 
 	for i := 0; i < b.N; i++ {
 		syn.Parser(1, []byte("https://chat.openai.com/c/ce412eb4-51f4-41bb-a0a2-17e051db363b"), []byte("ChatGPT"))

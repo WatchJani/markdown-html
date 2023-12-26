@@ -1,22 +1,26 @@
 package hash
 
+import (
+	"root/syntax"
+)
+
 type Hash struct {
-	hash []int
+	hash []syntax.Code
 }
 
 func NewHash(capacity int) *Hash {
 	return &Hash{
-		hash: make([]int, capacity),
+		hash: make([]syntax.Code, capacity),
 	}
 }
 
-func (h *Hash) Append(key byte, value int) {
+func (h *Hash) Append(key byte, value syntax.Code) {
 	h.hash[hashFn(key)] = value
 }
 
-func (h Hash) GetValue(value byte) (int, bool) {
+func (h Hash) GetValue(value byte) (syntax.Code, bool) {
 	val := h.hash[hashFn(value)]
-	return val, val != 0
+	return val, val.Code != 0
 }
 
 func hashFn(key byte) int8 {
